@@ -4,9 +4,11 @@ import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import net.atlassian.net.vastidev.mscreditevaluator.application.ex.ClientDataNotFoundException;
 import net.atlassian.net.vastidev.mscreditevaluator.application.ex.ErrorComunicationMicroservicesException;
+import net.atlassian.net.vastidev.mscreditevaluator.application.ex.ErrorSolicitCardException;
 import net.atlassian.net.vastidev.mscreditevaluator.domain.model.*;
 import net.atlassian.net.vastidev.mscreditevaluator.infra.clients.CardsResourceFeignClient;
 import net.atlassian.net.vastidev.mscreditevaluator.infra.clients.ClientResourceFeignClient;
+import net.atlassian.net.vastidev.mscreditevaluator.infra.mqueue.EmissionCardPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -26,6 +29,8 @@ public class CreditEvaluatorService {
 
     private final ClientResourceFeignClient clientsClient;
     private final CardsResourceFeignClient cardsClient;
+    private final EmissionCardPublisher emissionCardPublisher;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CreditEvaluatorService.class);
     public SituationClient getSituationClient(String cpf)
             throws ClientDataNotFoundException, ErrorComunicationMicroservicesException {
@@ -99,6 +104,16 @@ public class CreditEvaluatorService {
                 throw new ClientDataNotFoundException("Client data not found for CPF: " + cpf);
             }
             throw new ErrorComunicationMicroservicesException(e.getMessage(), status);
+        }
+    }
+
+    public ProtocolSolicitCard solicitEmissionCard(DatasSolicitEmissionCards datas){
+        try{
+            emissionCardPublisher.solicitCard(datas);
+            var protocol = UUID.randomUUID().toString();
+            return new ProtocolSolicitCard(protocol);
+        }catch (Exception e){
+            throw new ErrorSolicitCardException(e.getMessage());
         }
     }
 

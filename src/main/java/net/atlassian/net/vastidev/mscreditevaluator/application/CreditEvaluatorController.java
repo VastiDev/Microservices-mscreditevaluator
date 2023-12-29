@@ -3,9 +3,8 @@ package net.atlassian.net.vastidev.mscreditevaluator.application;
 import lombok.RequiredArgsConstructor;
 import net.atlassian.net.vastidev.mscreditevaluator.application.ex.ClientDataNotFoundException;
 import net.atlassian.net.vastidev.mscreditevaluator.application.ex.ErrorComunicationMicroservicesException;
-import net.atlassian.net.vastidev.mscreditevaluator.domain.model.DataReview;
-import net.atlassian.net.vastidev.mscreditevaluator.domain.model.ReturnClientReview;
-import net.atlassian.net.vastidev.mscreditevaluator.domain.model.SituationClient;
+import net.atlassian.net.vastidev.mscreditevaluator.application.ex.ErrorSolicitCardException;
+import net.atlassian.net.vastidev.mscreditevaluator.domain.model.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +17,12 @@ public class CreditEvaluatorController {
     private final CreditEvaluatorService creditEvaluatorService;
 
     @GetMapping
-    public String status(){
+    public String status() {
         return "ok";
     }
 
     @GetMapping(value = "/situation-client", params = "cpf")
-    public ResponseEntity querySituationClient(@RequestParam String cpf){
+    public ResponseEntity querySituationClient(@RequestParam String cpf) {
         try {
             SituationClient situationClient = creditEvaluatorService.getSituationClient(cpf);
             return ResponseEntity.ok(situationClient);
@@ -35,7 +34,7 @@ public class CreditEvaluatorController {
     }
 
     @PostMapping
-    public ResponseEntity clientReview (@RequestBody DataReview data){
+    public ResponseEntity clientReview(@RequestBody DataReview data) {
         try {
             ReturnClientReview returnClientReview = creditEvaluatorService.makeReview(data.getCpf(), data.getIncome());
             return ResponseEntity.ok(returnClientReview);
@@ -44,5 +43,16 @@ public class CreditEvaluatorController {
         } catch (ErrorComunicationMicroservicesException e) {
             return ResponseEntity.status(HttpStatus.resolve(e.getStatus())).body(e.getMessage());
         }
+    }
+
+    @PostMapping("solicit-card")
+    public ResponseEntity solicitCard(@RequestBody DatasSolicitEmissionCards datas) {
+        try {
+            ProtocolSolicitCard protocolSolicitCard = creditEvaluatorService.solicitEmissionCard(datas);
+            return ResponseEntity.ok(protocolSolicitCard);
+        } catch (ErrorSolicitCardException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+
     }
 }
