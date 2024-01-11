@@ -13,6 +13,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class CreditEvaluatorApplication {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(CreditEvaluatorApplication.class, args);
 	}
 
